@@ -1,0 +1,13 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=HazeDrop
+GenericName=Anonymous File Transfer
+Comment=Anonymous encrypted file transfer over Tor — Haze Protocol v2
+Exec=hazedrop %u
+Icon=hazedrop
+Terminal=false
+Categories=Network;Security;FileTransfer;
+Keywords=tor;anonymous;secure;encrypt;onion;privacy;
+StartupNotify=true
+StartupWMClass=hazedrop

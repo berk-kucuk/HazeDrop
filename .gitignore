@@ -1,0 +1,51 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+.eggs/
+HazeDrop-aur/
+
+# Virtual environment
+venv/
+.venv/
+env/
+
+# Distribution / build artifacts
+*.whl
+*.tar.gz
+MANIFEST
+build/
+dist/
+
+# Claude Code local config
+.claude/
+
+# User data (runtime)
+~/.config/hazedrop/
+~/.local/share/hazedrop/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Tor temp dirs (created at runtime)
+hazedrop_tor_*/
+
+# Test cache
+.pytest_cache/
+.mypy_cache/
+.coverage
+htmlcov/
