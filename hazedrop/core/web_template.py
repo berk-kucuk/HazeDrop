@@ -285,7 +285,11 @@ async function loadInfo(){
     if(!r.ok){throw new Error('HTTP '+r.status);}
     info=await r.json();
 
-    document.getElementById('filename').textContent=info.filename;
+    // /info withholds the filename while a password is set — naming the file
+    // to anyone holding only the link is often the whole secret. The real
+    // name arrives with the download, in X-HazeDrop-Filename.
+    document.getElementById('filename').textContent=
+      info.filename||'Protected file';
     document.getElementById('meta-size').textContent=fmtBytes(info.size);
 
     var chips=document.getElementById('meta-chips');
@@ -371,6 +375,7 @@ async function startDownload(){
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
 
+    document.getElementById('filename').textContent=fname;
     setStatus('Saved — '+fname,'success');
 
   }catch(e){

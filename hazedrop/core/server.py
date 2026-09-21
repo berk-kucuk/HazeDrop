@@ -1,4 +1,5 @@
 import asyncio
+import hmac
 import json
 import time
 from collections.abc import Callable
@@ -71,15 +72,28 @@ class TorDropServer:
             expires_at = int(s.created_at + s.expire_seconds)
 
         body = {
-            "filename": s.filename,
             "size": s.filesize,
             "password_required": s.is_password_protected,
             "once": s.once,
             "downloads": s.download_count,
             "expires_at": expires_at,
             "haze_version": "2",
-            "file_hash": s.file_hash,
         }
+
+        # The filename and the plaintext hash are withheld until the password
+        # has been given. /info is unauthenticated — it has to be, the page
+        # needs it to know whether to draw a password box — so everything it
+        # returns is readable by anyone who has the link and nothing else.
+        #
+        # For an unprotected transfer that is the whole design: the URL is the
+        # secret. For a protected one the password is a second factor, and
+        # naming the file defeats it for the thing most worth knowing —
+        # "payslip-2026.pdf" or "recovery-seed.txt" is often the entire
+        # secret. file_hash goes with it: against a file the guesser already
+        # has a copy of, it confirms the contents exactly.
+        if not s.is_password_protected:
+            body["filename"] = s.filename
+            body["file_hash"] = s.file_hash
         return web.Response(
             content_type="application/json",
             text=json.dumps(body),
@@ -102,8 +116,13 @@ class TorDropServer:
                 except Exception:
                     return web.Response(status=401)
 
+                # compare_digest, not !=: comparing secrets with == leaks how
+                # many leading bytes matched through timing. The practical risk
+                # here is small (both sides are SHA-256 digests, so a partial
+                # match tells an attacker nothing about the password), but a
+                # constant-time compare costs nothing and removes the question.
                 expected = hash_password_for_auth(s.password)
-                if hash_password_for_auth(provided) != expected:
+                if not hmac.compare_digest(hash_password_for_auth(provided), expected):
                     if self._on_wrong_password:
                         self._on_wrong_password()
                     self._wrong_pw_attempts += 1
@@ -155,8 +174,13 @@ class TorDropServer:
                 except Exception:
                     return web.Response(status=401, text="Password required")
 
+                # compare_digest, not !=: comparing secrets with == leaks how
+                # many leading bytes matched through timing. The practical risk
+                # here is small (both sides are SHA-256 digests, so a partial
+                # match tells an attacker nothing about the password), but a
+                # constant-time compare costs nothing and removes the question.
                 expected = hash_password_for_auth(s.password)
-                if hash_password_for_auth(provided) != expected:
+                if not hmac.compare_digest(hash_password_for_auth(provided), expected):
                     if self._on_wrong_password:
                         self._on_wrong_password()
                     self._wrong_pw_attempts += 1

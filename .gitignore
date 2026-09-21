@@ -49,3 +49,7 @@ hazedrop_tor_*/
 .mypy_cache/
 .coverage
 htmlcov/
+
+# Packaged build artifacts (release binaries, not source)
+dist-pkg/
+*.pkg.tar.*

@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "hazedrop"
-version = "1.3.0"
+version = "1.5.0"
 description = "Anonymous encrypted file transfer over Tor — Haze Protocol"
 license = { text = "GPL-3.0" }
 requires-python = ">=3.11"

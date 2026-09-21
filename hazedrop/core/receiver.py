@@ -135,6 +135,18 @@ async def download_and_decrypt(
 
     os.makedirs(output_dir, exist_ok=True)
     out_path = os.path.join(output_dir, filename)
+
+    # Second line of defence. decrypt_file_chunked() already reduces the
+    # sender-supplied name to a single path component, but the write is the
+    # step that cannot be taken back, so it is checked here too: whatever the
+    # name turned into, the resolved destination has to be inside the directory
+    # the user chose. realpath resolves ".." and any symlink on the way.
+    _root = os.path.realpath(output_dir)
+    if os.path.commonpath([_root, os.path.realpath(out_path)]) != _root:
+        raise ValueError(
+            f"refusing to write outside {output_dir}: the sender supplied "
+            f"the name {filename!r}"
+        )
     if os.path.exists(out_path):
         base_name, ext = os.path.splitext(filename)
         counter = 1

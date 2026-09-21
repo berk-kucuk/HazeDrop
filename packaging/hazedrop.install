@@ -7,7 +7,7 @@ post_install() {
     echo "     hazedrop send     — Send a file"
     echo "     hazedrop receive  — Receive a file"
     echo ""
-    echo "  Installed to: /opt/hazedrop  (self-contained venv)"
+    echo "  Installed to: /opt/hazedrop  (runs in the shared Maze Python environment, /opt/maze/venv)"
     echo ""
 }
 

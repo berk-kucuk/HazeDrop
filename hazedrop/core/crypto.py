@@ -76,6 +76,45 @@ def encrypt_file_chunked(
                 on_progress(processed, filesize)
 
 
+def safe_filename(name: str, fallback: str = "hazedrop-file") -> str:
+    """Reduce a name from a transfer header to something safe to write.
+
+    The filename in a HazeDrop header is chosen by the SENDER and is not
+    covered by any authentication tag — the chunks are AEAD-protected, the
+    header is not. Handing it to os.path.join() unchecked let a sender decide
+    where on the receiver's disk the file landed:
+
+        os.path.join("~/Downloads", "../../.config/autostart/x.desktop")
+        os.path.join("~/Downloads", "/home/you/.bashrc")   -> "/home/you/.bashrc"
+
+    The second one is the sharp edge: an ABSOLUTE second argument makes
+    os.path.join discard the directory entirely. Either form is an arbitrary
+    file write as the receiving user, and dropping a .desktop file into
+    ~/.config/autostart turns that into code execution at the next login.
+
+    A received file has no business being anywhere but the download directory,
+    so the name is reduced to a single path component with no separators, no
+    traversal and no control characters.
+    """
+    # Both separators: a sender is not obliged to be running Linux, and a
+    # backslash is a legal filename character here, so "..\..\x" would
+    # survive basename() and become a real name containing traversal text.
+    name = name.replace("\\", "/")
+    name = name.split("/")[-1]
+    # NUL and control characters have no legitimate use in a filename and are a
+    # classic way to confuse whatever displays or handles it later.
+    name = "".join(ch for ch in name if ch.isprintable() and ch not in '\x00')
+    name = name.strip()
+    # Only the pure-dot names are rejected. Stripping leading dots generally
+    # would rename a legitimate ".gitignore" to "gitignore" for no security
+    # gain: the containment property comes from removing the separators above,
+    # not from the leading dot. A dotfile inside the download directory is
+    # just a file.
+    if not name or name.strip(".") == "":
+        return fallback
+    return name[:255]
+
+
 def decrypt_file_chunked(data: bytes, key: bytes) -> tuple[str, bytes]:
     offset = 0
 
@@ -115,7 +154,9 @@ def decrypt_file_chunked(data: bytes, key: bytes) -> tuple[str, bytes]:
         offset += enc_len
         plaintext_parts.append(cipher.decrypt(nonce, ciphertext, None))
 
-    return filename, b"".join(plaintext_parts)
+    # Sanitised here rather than at the call site so every caller is covered,
+    # including any future one that forgets.
+    return safe_filename(filename), b"".join(plaintext_parts)
 
 
 def compute_file_hash(filepath: str) -> str:
