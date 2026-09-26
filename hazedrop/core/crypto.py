@@ -139,7 +139,7 @@ def decrypt_file_chunked(data: bytes, key: bytes) -> tuple[str, bytes]:
     filename = data[offset : offset + filename_len].decode("utf-8")
     offset += filename_len
 
-    _orig_size = struct.unpack(">Q", data[offset : offset + 8])[0]
+    orig_size = struct.unpack(">Q", data[offset : offset + 8])[0]
     offset += 8
 
     cipher = ChaCha20Poly1305(key)
@@ -154,9 +154,22 @@ def decrypt_file_chunked(data: bytes, key: bytes) -> tuple[str, bytes]:
         offset += enc_len
         plaintext_parts.append(cipher.decrypt(nonce, ciphertext, None))
 
+    plaintext = b"".join(plaintext_parts)
+    # Each chunk is authenticated on its own and none of them says "I am the
+    # last", so a stream cut exactly on a chunk boundary — a Tor circuit
+    # dropping mid-transfer is enough — decrypts cleanly to a PREFIX of the file.
+    # It used to be returned as if complete. The header's size was read and
+    # ignored; checking it turns that silent truncation into an error. (The
+    # header is not authenticated, so this guards against accidents, not a
+    # forger — binding chunk index and a final flag into the AEAD is the
+    # format-level fix; see HAZEDROP_SPEC.md / the audit report.)
+    if len(plaintext) != orig_size:
+        raise ValueError(
+            f"Incomplete transfer: received {len(plaintext)} of {orig_size} bytes")
+
     # Sanitised here rather than at the call site so every caller is covered,
     # including any future one that forgets.
-    return safe_filename(filename), b"".join(plaintext_parts)
+    return safe_filename(filename), plaintext
 
 
 def compute_file_hash(filepath: str) -> str:

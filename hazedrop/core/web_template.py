@@ -333,6 +333,9 @@ async function startDownload(){
   try{
     var body={};
     if(info.password_required)body.password=pw;
+    // No password: prove we hold the key from the link's #fragment (the part
+    // a browser never sends on its own). Without it the server refuses.
+    else body.key=(location.hash||'').slice(1).split(':')[0];
 
     var resp=await fetch('/web-download',{
       method:'POST',
@@ -341,6 +344,7 @@ async function startDownload(){
     });
 
     if(resp.status===401){setStatus('Wrong password','error');btn.disabled=false;return;}
+    if(resp.status===403){setStatus('This link is incomplete — the part after # is missing','error');btn.disabled=false;return;}
     if(resp.status===410){setStatus('File expired or already downloaded','error');return;}
     if(!resp.ok){setStatus('Error: HTTP '+resp.status,'error');btn.disabled=false;return;}
 

@@ -6,7 +6,9 @@ from collections.abc import Callable
 
 from aiohttp import web
 
-from hazedrop.core.crypto import encrypt_file_chunked, hash_password_for_auth
+from hazedrop.core.crypto import (
+    encrypt_file_chunked, extract_key_from_url, hash_password_for_auth,
+)
 from hazedrop.core.session import DropSession
 from hazedrop.core.web_template import HTML
 
@@ -188,6 +190,28 @@ class TorDropServer:
                         self._session.force_expire()
                         return web.Response(status=429, text="Too many wrong attempts — link locked")
                     return web.Response(status=401, text="Wrong password")
+            else:
+                # No password: the secret is the key in the link's #fragment.
+                # This route hands out the PLAINTEXT, so it must be gated on
+                # that key — it used to be gated on nothing, and anyone who had
+                # only the .onion address (a link preview, a history sync, a
+                # log line: every place that keeps a URL but drops its
+                # fragment) could download the file without ever holding the
+                # key the whole design rests on. The page reads the fragment
+                # from location.hash and sends it; it never leaves Tor.
+                try:
+                    body = await request.json()
+                    provided_key = str(body.get("key", ""))
+                except Exception:
+                    provided_key = ""
+                try:
+                    candidate = extract_key_from_url("#" + provided_key) or b""
+                except Exception:
+                    candidate = b""
+                if not s.key or not hmac.compare_digest(candidate, s.key):
+                    return web.Response(
+                        status=403,
+                        text="This link is incomplete — the part after # is missing")
 
             if self._on_download_start:
                 self._on_download_start()
