@@ -97,56 +97,70 @@ chunks  = enc_len(4) + nonce(12) + ChaCha20Poly1305(chunk)   × N
 
 ## Kurulum
 
-### Hızlı Kurulum (Tüm Dağıtımlar)
+### Maze deposundan
+
+**Maze Linux'ta** depo zaten tanımlı:
 
 ```bash
-git clone https://github.com/berkkucukk/hazedrop
-cd hazedrop
-bash installer/install.sh
+sudo pacman -S hazedrop
 ```
 
-Kurulum scripti şunları yapar:
-- Dağıtımı otomatik tespit eder (Arch, Debian/Ubuntu, Fedora, openSUSE, Void, Alpine, macOS)
-- `python`, `tor` gibi sistem bağımlılıklarını kurar
-- `~/.local/share/hazedrop/venv/` altında sanal ortam oluşturur
-- `~/.local/bin/hazedrop` launcher yazar
-- `~/.local/share/applications/hazedrop.desktop` oluşturur
-- Uygulama ikonunu sisteme kaydeder
+**Arch Linux ve Arch tabanlı dağıtımlarda** depoyu bir kez ekleyin:
 
-#### Seçenekler
+1. Maze imzalama anahtarını içe aktarın ve güvenin:
+
+   ```bash
+   curl -O https://mazerepo.berkkucukk.com.tr/packages/mazelinux.gpg
+   gpg --show-keys --with-fingerprint mazelinux.gpg
+   sudo pacman-key --add mazelinux.gpg
+   sudo pacman-key --lsign-key 7C4D515A6B930CB04794CEF6147C8159B3E2EE5F
+   ```
+
+   `gpg`'nin yazdığı parmak izi `7C4D 515A 6B93 0CB0 4794  CEF6 147C 8159 B3E2 EE5F` olmalı.
+
+2. Depoyu `/etc/pacman.conf` dosyasının sonuna ekleyin:
+
+   ```ini
+   [mazelinux]
+   SigLevel = Required DatabaseOptional
+   Server = https://mazerepo.berkkucukk.com.tr/packages
+   ```
+
+3. Senkronize edin ve kurun:
+
+   ```bash
+   sudo pacman -Syu hazedrop
+   ```
+
+İsterseniz `mazelinux-keyring` paketini de kurun; imzalama anahtarını pacman üzerinden güncel tutar.
+
+Kaldırmak için: `sudo pacman -Rns hazedrop`.
+
+### Kaynaktan derleme
+
+Paket, bu çalışma ağacından `build-pkg.sh` ile derlenir ve yayındaki paket gibi pacman ile kurulur:
 
 ```bash
-bash installer/install.sh --system      # /opt/hazedrop'a sistem geneli kur (sudo)
-bash installer/install.sh --no-deps     # Sistem paket kurulumunu atla
-bash installer/install.sh --uninstall   # Tüm dosyaları kaldır
+sudo pacman -S --needed base-devel git
+git clone https://github.com/berk-kucuk/HazeDrop.git
+cd HazeDrop
+sudo pacman -S --needed $(bash -c 'source packaging/PKGBUILD; echo "${depends[@]}" "${makedepends[@]}"')
+./build-pkg.sh --install
 ```
 
-### Arch Linux — AUR / PKGBUILD
+`--install` verilmezse paket yalnızca `dist-pkg/` altına derlenir.
+
+`maze-python` (ortak Python çalışma ortamı) Maze deposundan gelir; bu yüzden önce depoyu ekleyin (yukarıdaki 1–2. adımlar).
+
+### Geliştirme
+
+Bir çalışma kopyasından sanal ortamda doğrudan çalıştırmak için:
 
 ```bash
-# Doğrudan PKGBUILD ile
-git clone https://github.com/berkkucukk/hazedrop
-cd hazedrop
-makepkg -si
-```
-
-### Manuel Kurulum
-
-```bash
-git clone https://github.com/berkkucukk/hazedrop
-cd hazedrop
 python3 -m venv venv
 source venv/bin/activate
 pip install -e .
-```
-
-### PATH Ayarı
-
-Kurulum sonrası `hazedrop` komutunu bulamazsan:
-
-```bash
-echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc
-source ~/.bashrc
+hazedrop
 ```
 
 ---
@@ -277,16 +291,10 @@ Transfer geçmişi `~/.local/share/hazedrop/history.db` SQLite veritabanında tu
 ## Kaldırma
 
 ```bash
-bash installer/install.sh --uninstall
+sudo pacman -Rns hazedrop
 ```
 
-Şunları kaldırır:
-- `~/.local/share/hazedrop/` (venv + paket)
-- `~/.local/bin/hazedrop` (launcher)
-- `~/.local/share/applications/hazedrop.desktop`
-- `~/.local/share/pixmaps/hazedrop.png`
-
-Kullanıcı verilerini temizlemek için:
+Kullanıcı verilerini de temizlemek için:
 ```bash
 rm -rf ~/.config/hazedrop ~/.local/share/hazedrop
 ```
