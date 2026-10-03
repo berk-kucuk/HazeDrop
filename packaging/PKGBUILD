@@ -1,8 +1,8 @@
 # Maintainer: Berk Küçük <dev.berkkucukk@gmail.com>
 pkgname=hazedrop
-pkgver=1.5.0
-pkgrel=3
-pkgdesc="Anonymous encrypted file transfer over Tor — Haze Protocol v2"
+pkgver=1.5.1
+pkgrel=1
+pkgdesc="Anonymous encrypted file transfer over Tor — Haze Protocol v2 — for Maze Linux"
 arch=('x86_64' 'aarch64')
 url="https://github.com/berk-kucuk/HazeDrop"
 license=('GPL-3.0-only')

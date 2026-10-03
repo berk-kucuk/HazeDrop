@@ -2,6 +2,8 @@
 
 **Anonymous encrypted file transfer over Tor — Haze Protocol v2**
 
+*Developed for [Maze Linux](https://github.com/berk-kucuk/MazeLinux)*
+
 HazeDrop, dosyaları Tor ağı üzerinden kimlik tespiti olmaksızın aktarmanızı sağlayan, uçtan uca şifreli bir dosya transfer uygulamasıdır. Gönderen ve alıcı arasında hiçbir merkezi sunucu bulunmaz; bağlantı doğrudan `.onion` adresi üzerinden kurulur.
 
 ---
@@ -335,5 +337,7 @@ hazedrop/
 ---
 
 ## Lisans
+
+Telif hakkı © 2026 Berk Küçük
 
 GPL-3.0 — Berk Küçük

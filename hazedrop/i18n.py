@@ -9,6 +9,7 @@ _STRINGS: dict[str, dict[str, str]] = {
 
         # ── Title bar ────────────────────────────────────────────────
         "protocol_badge": "HAZE PROTOCOL",
+        "for_maze_linux": "for Maze Linux",
         "protocol_connecting": "CONNECTING…",
         "protocol_error": "TOR ERROR",
         "panic": "PANIC",
@@ -141,6 +142,7 @@ _STRINGS: dict[str, dict[str, str]] = {
 
         # ── Title bar ────────────────────────────────────────────────
         "protocol_badge": "HAZE PROTOKOL",
+        "for_maze_linux": "Maze Linux için",
         "protocol_connecting": "BAĞLANIYOR…",
         "protocol_error": "TOR HATASI",
         "panic": "PANİK",
