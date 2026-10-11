@@ -82,6 +82,12 @@ class TorManager:
                 "ControlPort": str(self._control_port),
                 "DataDirectory": self._data_dir,
                 "Log": "notice stdout",
+                # Without an auth method Tor accepts NULL authentication on the
+                # control port, so any local account could read circuits and
+                # rewrite this onion service while a transfer runs. The cookie
+                # lives in the 0700 DataDirectory; stem's authenticate() finds
+                # and reads it automatically. (Haze already does the same.)
+                "CookieAuthentication": "1",
             }
 
             if use_bridges and bridges:

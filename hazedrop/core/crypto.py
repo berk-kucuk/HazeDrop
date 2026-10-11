@@ -30,6 +30,16 @@ def hash_password_for_auth(password: str) -> str:
     return hashlib.sha256(f"hazedrop-v2:{password}".encode()).hexdigest()
 
 
+def download_proof(key: bytes) -> str:
+    """Proof of holding the link key, for POST /download on unprotected shares.
+
+    The key itself never has to travel: the server holds it too and recomputes
+    the same HMAC.
+    """
+    import hmac as _hmac
+    return _hmac.new(key, b"hazedrop-download-v1", hashlib.sha256).hexdigest()
+
+
 def generate_key() -> bytes:
     return os.urandom(32)
 

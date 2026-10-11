@@ -7,7 +7,7 @@ from collections.abc import Callable
 from aiohttp import web
 
 from hazedrop.core.crypto import (
-    encrypt_file_chunked, extract_key_from_url, hash_password_for_auth,
+    download_proof, encrypt_file_chunked, extract_key_from_url, hash_password_for_auth,
 )
 from hazedrop.core.session import DropSession
 from hazedrop.core.web_template import HTML
@@ -132,6 +132,21 @@ class TorDropServer:
                         self._session.force_expire()
                         return web.Response(status=429)
                     return web.Response(status=401)
+            else:
+                # No password: the link key is the only secret. /web-download
+                # was already gated on it, but this sibling route streamed the
+                # file to anyone who had just the .onion address and then
+                # counted it as THE download — so a "once" link could be burnt
+                # before the real recipient arrived. Require proof of the key
+                # (an HMAC, so the key itself never travels) before streaming
+                # or counting anything.
+                try:
+                    body = await request.json()
+                    provided_proof = str(body.get("proof", ""))
+                except Exception:
+                    provided_proof = ""
+                if not s.key or not hmac.compare_digest(provided_proof, download_proof(s.key)):
+                    return web.Response(status=403)
 
             if self._on_download_start:
                 self._on_download_start()

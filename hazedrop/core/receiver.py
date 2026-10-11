@@ -8,7 +8,9 @@ from collections.abc import Callable
 
 import aiohttp
 
-from hazedrop.core.crypto import derive_key, decrypt_file_chunked, extract_key_from_url, extract_hash_from_url
+from hazedrop.core.crypto import (
+    decrypt_file_chunked, derive_key, download_proof, extract_hash_from_url, extract_key_from_url,
+)
 
 
 async def fetch_info(onion_url: str, socks_port: int) -> dict:
@@ -75,6 +77,11 @@ async def download_and_decrypt(
             post_body: dict = {}
             if info.get("password_required") and password:
                 post_body["password"] = password
+            elif key_from_url is not None:
+                # Unprotected share: prove we hold the link key (the sender
+                # refuses /download without it, so an address alone cannot
+                # burn a one-time link).
+                post_body["proof"] = download_proof(key_from_url)
 
             try:
                 async with session.post(
@@ -85,6 +92,8 @@ async def download_and_decrypt(
                 ) as resp:
                     if resp.status == 401:
                         raise PermissionError("Wrong password or authentication failed")
+                    if resp.status == 403:
+                        raise PermissionError("This link is incomplete — the part after # (the key) is missing")
                     if resp.status == 410:
                         raise FileNotFoundError("File no longer available (expired or already downloaded)")
                     resp.raise_for_status()
